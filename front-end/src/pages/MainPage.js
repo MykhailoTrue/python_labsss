@@ -4,6 +4,8 @@ import {
   getAthletes,
   getMedicalRecords,
   getTrainingSessions,
+  createMedicalRecord,
+  createTrainingSession,
 } from '../api/athleteApi';
 import {
   Container,
@@ -12,6 +14,8 @@ import {
   List,
   ListItem,
   Divider,
+  TextField,
+  Box,
 } from '@mui/material';
 
 const MainPage = () => {
@@ -20,6 +24,12 @@ const MainPage = () => {
   const [selectedAthlete, setSelectedAthlete] = useState(null);
   const [medicalRecords, setMedicalRecords] = useState([]);
   const [trainingSessions, setTrainingSessions] = useState([]);
+  const [recordDetails, setRecordDetails] = useState('');
+  const [sessionDetails, setSessionDetails] = useState({
+    date: '',
+    duration: '',
+    description: '',
+  });
 
   useEffect(() => {
     fetchAthletes();
@@ -44,6 +54,31 @@ const MainPage = () => {
     setSelectedAthlete(athlete);
     fetchMedicalRecords(athlete.id);
     fetchTrainingSessions(athlete.id);
+  };
+
+  const handleCreateMedicalRecord = async () => {
+    try {
+      await createMedicalRecord(selectedAthlete.id, { details: recordDetails });
+      setRecordDetails('');
+      fetchMedicalRecords(selectedAthlete.id); // Оновити список після додавання
+    } catch (error) {
+      console.error('Error creating medical record:', error);
+    }
+  };
+
+  const handleCreateTrainingSession = async () => {
+    try {
+      const { date, duration, description } = sessionDetails;
+      await createTrainingSession(selectedAthlete.id, {
+        session_date: date,
+        duration: parseInt(duration),
+        description,
+      });
+      setSessionDetails({ date: '', duration: '', description: '' });
+      fetchTrainingSessions(selectedAthlete.id); // Оновити список після додавання
+    } catch (error) {
+      console.error('Error creating training session:', error);
+    }
   };
 
   return (
@@ -74,15 +109,78 @@ const MainPage = () => {
               <ListItem key={record.id}>{record.details}</ListItem>
             ))}
           </List>
+          <Box mt={2}>
+            <TextField
+              label="New Medical Record"
+              value={recordDetails}
+              onChange={(e) => setRecordDetails(e.target.value)}
+              fullWidth
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCreateMedicalRecord}
+              sx={{ mt: 1 }}
+            >
+              Add Medical Record
+            </Button>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
 
           <Typography variant="h5">Training Sessions</Typography>
           <List>
             {trainingSessions.map((session) => (
               <ListItem key={session.id}>
-                {session.description} - {session.duration} mins
+                {session.description} - {session.duration} mins on{' '}
+                {session.session_date}
               </ListItem>
             ))}
           </List>
+          <Box mt={2}>
+            <TextField
+              label="Date"
+              type="date"
+              value={sessionDetails.date}
+              onChange={(e) =>
+                setSessionDetails({ ...sessionDetails, date: e.target.value })
+              }
+              fullWidth
+              sx={{ mb: 1 }}
+            />
+            <TextField
+              label="Duration (mins)"
+              type="number"
+              value={sessionDetails.duration}
+              onChange={(e) =>
+                setSessionDetails({
+                  ...sessionDetails,
+                  duration: e.target.value,
+                })
+              }
+              fullWidth
+              sx={{ mb: 1 }}
+            />
+            <TextField
+              label="Description"
+              value={sessionDetails.description}
+              onChange={(e) =>
+                setSessionDetails({
+                  ...sessionDetails,
+                  description: e.target.value,
+                })
+              }
+              fullWidth
+            />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleCreateTrainingSession}
+              sx={{ mt: 1 }}
+            >
+              Add Training Session
+            </Button>
+          </Box>
         </div>
       )}
     </Container>
